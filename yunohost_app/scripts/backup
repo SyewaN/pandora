@@ -1,0 +1,22 @@
+#!/bin/bash
+set -eu
+
+source _common.sh
+source /usr/share/yunohost/helpers
+
+_pandora_set_paths
+
+ynh_script_progression --message="Backing up Pandora data and configuration..."
+
+ynh_backup --src_path="$install_dir"
+ynh_backup --src_path="$data_dir"
+ynh_backup --src_path="/etc/$app"
+ynh_backup --src_path="/etc/systemd/system/${backend_service}.service"
+ynh_backup --src_path="/etc/systemd/system/${ai_service}.service"
+
+domain=$(ynh_app_setting_get --app="$app" --key=domain)
+if [ -n "$domain" ] && [ -f "/etc/nginx/conf.d/${domain}.d/${app}.conf" ]; then
+  ynh_backup --src_path="/etc/nginx/conf.d/${domain}.d/${app}.conf"
+fi
+
+ynh_script_progression --message="Backup completed." --last

@@ -1,0 +1,18 @@
+[Unit]
+Description=Pandora backend service
+After=network.target
+
+[Service]
+Type=simple
+User=__APP__
+Group=__APP__
+WorkingDirectory=__INSTALL_DIR__
+EnvironmentFile=__ENV_FILE__
+ExecStart=/usr/bin/node backend/src/app.js
+Restart=always
+RestartSec=5
+StandardOutput=append:__LOG_DIR__/backend.log
+StandardError=append:__LOG_DIR__/backend.error.log
+
+[Install]
+WantedBy=multi-user.target
