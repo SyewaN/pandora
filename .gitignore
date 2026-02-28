@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+
+# Python
+ai/.venv/
+__pycache__/
+*.pyc
+
+# Environment
+.env
+
+# Runtime files
+logs/*.log
+!logs/.gitkeep
+
+# Model artifacts
+ai/model/
+!ai/model/.gitkeep
+
+# OS/IDE
+.DS_Store
+.vscode/
+.idea/
