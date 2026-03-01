@@ -20,8 +20,11 @@ yunohost app install /path/to/repo/yunohost_app
 Kurulum sirasinda:
 
 - `domain` ve `path` secilir
-- `repo_url` (varsayilan: `https://github.com/SyewaN/pandora.git`)
+- `repo_url` (varsayilan: `https://github.com/SyewaN/pandora_ynh.git`)
 - `repo_branch` (varsayilan: `main`)
+
+YunoHost'ta uygulama paket reposu URL'sinin `_ynh` ile bitmesi beklenir.
+Ornek: `https://domain.tld/path/to/pandora_ynh`
 
 ## Notlar
 

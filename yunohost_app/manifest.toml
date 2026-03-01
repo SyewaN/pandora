@@ -40,7 +40,7 @@ default = "visitors"
 ask.en = "Git repository URL to deploy"
 ask.tr = "Deploy edilecek Git repository URL'i"
 type = "url"
-default = "https://github.com/SyewaN/pandora.git"
+default = "https://github.com/SyewaN/pandora_ynh.git"
 
 [install.repo_branch]
 ask.en = "Git branch or tag"
