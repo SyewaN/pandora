@@ -23,6 +23,6 @@ ynh_app_setting_set --app="$app" --key=path --value="$new_path"
 
 _pandora_remove_nginx "$old_domain"
 _pandora_install_nginx "$new_domain" "$new_path" "$backend_port" "$ai_port"
-ynh_systemd_action --service=nginx --action=reload
+systemctl reload nginx
 
 ynh_script_progression --message="URL updated." --last

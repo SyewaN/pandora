@@ -20,7 +20,7 @@ systemctl daemon-reload
 
 ynh_script_progression --message="Removing nginx config..."
 _pandora_remove_nginx "$domain"
-ynh_systemd_action --service=nginx --action=reload
+systemctl reload nginx
 ynh_webpath_unregister --app="$app" --domain="$domain" --path_url="$path_url" || true
 
 ynh_script_progression --message="Removing app files..."
