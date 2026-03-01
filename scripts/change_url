@@ -1,0 +1,28 @@
+#!/bin/bash
+set -eu
+
+source _common.sh
+source /usr/share/yunohost/helpers
+
+_pandora_set_paths
+
+old_domain=$YNH_APP_OLD_DOMAIN
+old_path=$(ynh_app_setting_get --app="$app" --key=path)
+new_domain=$YNH_APP_NEW_DOMAIN
+new_path=$YNH_APP_NEW_PATH
+new_path=$(ynh_normalize_url_path --path_url="$new_path")
+
+backend_port=$(ynh_app_setting_get --app="$app" --key=backend_port)
+ai_port=$(ynh_app_setting_get --app="$app" --key=ai_port)
+
+ynh_script_progression --message="Updating URL settings..."
+ynh_webpath_unregister --app="$app" --domain="$old_domain" --path_url="$old_path"
+ynh_webpath_register --app="$app" --domain="$new_domain" --path_url="$new_path"
+ynh_app_setting_set --app="$app" --key=domain --value="$new_domain"
+ynh_app_setting_set --app="$app" --key=path --value="$new_path"
+
+_pandora_remove_nginx "$old_domain"
+_pandora_install_nginx "$new_domain" "$new_path" "$backend_port" "$ai_port"
+ynh_systemd_action --service=nginx --action=reload
+
+ynh_script_progression --message="URL updated." --last

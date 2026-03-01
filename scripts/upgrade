@@ -1,0 +1,53 @@
+#!/bin/bash
+set -eu
+
+source _common.sh
+source /usr/share/yunohost/helpers
+
+_pandora_set_paths
+
+domain=$(ynh_app_setting_get --app="$app" --key=domain)
+path_url=$(ynh_app_setting_get --app="$app" --key=path)
+repo_url=$(ynh_app_setting_get --app="$app" --key=repo_url)
+repo_branch=$(ynh_app_setting_get --app="$app" --key=repo_branch)
+backend_port=$(ynh_app_setting_get --app="$app" --key=backend_port)
+ai_port=$(ynh_app_setting_get --app="$app" --key=ai_port)
+
+ynh_script_progression --message="Updating system packages..."
+ynh_install_app_dependencies "$pkg_dependencies"
+
+ynh_script_progression --message="Updating application source..."
+if [ -d "$install_dir/.git" ]; then
+  git -C "$install_dir" fetch --all --prune
+  git -C "$install_dir" checkout "$repo_branch"
+  git -C "$install_dir" pull --ff-only origin "$repo_branch"
+else
+  rm -rf "$install_dir"
+  git clone --depth 1 --branch "$repo_branch" "$repo_url" "$install_dir"
+fi
+
+ynh_script_progression --message="Updating dependencies..."
+npm install --prefix "$install_dir" --omit=dev
+npm install --prefix "$install_dir" --omit=dev express cors helmet
+python3 -m venv "$install_dir/ai/venv"
+"$install_dir/ai/venv/bin/pip" install --upgrade pip
+"$install_dir/ai/venv/bin/pip" install flask flask-cors
+
+mkdir -p "$install_dir/data" "$data_dir" "$log_dir"
+if [ ! -f "$data_dir/measurements.json" ]; then
+  echo "[]" > "$data_dir/measurements.json"
+fi
+ln -sfn "$data_dir/measurements.json" "$install_dir/data/measurements.json"
+
+_pandora_write_env "$backend_port" "$ai_port"
+_pandora_install_systemd
+_pandora_install_nginx "$domain" "$path_url" "$backend_port" "$ai_port"
+
+chown -R "$app:$app" "$install_dir" "$data_dir" "$log_dir"
+
+ynh_script_progression --message="Restarting services..."
+systemctl daemon-reload
+systemctl enable --now "$backend_service" "$ai_service"
+ynh_systemd_action --service=nginx --action=reload
+
+ynh_script_progression --message="Upgrade completed." --last

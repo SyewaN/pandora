@@ -1,0 +1,33 @@
+#!/bin/bash
+set -eu
+
+source _common.sh
+source /usr/share/yunohost/helpers
+
+_pandora_set_paths
+
+domain=$(ynh_app_setting_get --app="$app" --key=domain)
+path_url=$(ynh_app_setting_get --app="$app" --key=path)
+
+ynh_script_progression --message="Stopping Pandora services..."
+systemctl disable --now "$backend_service" >/dev/null 2>&1 || true
+systemctl disable --now "$ai_service" >/dev/null 2>&1 || true
+
+ynh_script_progression --message="Removing systemd units..."
+rm -f "/etc/systemd/system/${backend_service}.service"
+rm -f "/etc/systemd/system/${ai_service}.service"
+systemctl daemon-reload
+
+ynh_script_progression --message="Removing nginx config..."
+_pandora_remove_nginx "$domain"
+ynh_systemd_action --service=nginx --action=reload
+ynh_webpath_unregister --app="$app" --domain="$domain" --path_url="$path_url" || true
+
+ynh_script_progression --message="Removing app files..."
+rm -rf "$install_dir" "$data_dir" "/etc/$app" "$log_dir"
+
+if id "$app" >/dev/null 2>&1; then
+  userdel "$app" >/dev/null 2>&1 || true
+fi
+
+ynh_script_progression --message="Removal completed." --last

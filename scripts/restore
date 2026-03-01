@@ -1,0 +1,31 @@
+#!/bin/bash
+set -eu
+
+source _common.sh
+source /usr/share/yunohost/helpers
+
+_pandora_set_paths
+
+ynh_script_progression --message="Restoring Pandora files..."
+ynh_restore_file --origin_path="$install_dir"
+ynh_restore_file --origin_path="$data_dir"
+ynh_restore_file --origin_path="/etc/$app"
+ynh_restore_file --origin_path="/etc/systemd/system/${backend_service}.service"
+ynh_restore_file --origin_path="/etc/systemd/system/${ai_service}.service"
+
+domain=$(ynh_app_setting_get --app="$app" --key=domain)
+path_url=$(ynh_app_setting_get --app="$app" --key=path)
+if [ -n "$domain" ]; then
+  ynh_restore_file --origin_path="/etc/nginx/conf.d/${domain}.d/${app}.conf" || true
+  ynh_webpath_register --app="$app" --domain="$domain" --path_url="$path_url" || true
+fi
+
+mkdir -p "$log_dir" "$data_dir"
+chown -R "$app:$app" "$install_dir" "$data_dir" "$log_dir"
+
+ynh_script_progression --message="Restarting services..."
+systemctl daemon-reload
+systemctl enable --now "$backend_service" "$ai_service"
+ynh_systemd_action --service=nginx --action=reload
+
+ynh_script_progression --message="Restore completed." --last
