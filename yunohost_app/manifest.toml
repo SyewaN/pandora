@@ -50,4 +50,4 @@ default = "main"
 
 [resources]
 [resources.permissions]
-main.url = "/dashboard"
+main.url = "/"
