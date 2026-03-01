@@ -24,7 +24,7 @@ app.get('/api/health', (req, res) => {
 
 // Root route for reverse-proxy base path checks
 app.get('/', (req, res) => {
-    res.redirect('/dashboard');
+    res.sendFile(path.join(__dirname, 'dashboard.html'));
 });
 
 app.get('/dashboard', (req, res) => {
