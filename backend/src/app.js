@@ -24,12 +24,11 @@ app.get('/api/health', (req, res) => {
 
 // Root route for reverse-proxy base path checks
 app.get('/', (req, res) => {
-    res.json({
-        success: true,
-        service: 'obruk-backend',
-        message: 'Pandora backend is running',
-        health: '/api/health'
-    });
+    res.redirect('/dashboard');
+});
+
+app.get('/dashboard', (req, res) => {
+    res.sendFile(path.join(__dirname, 'dashboard.html'));
 });
 
 // Veri kaydet

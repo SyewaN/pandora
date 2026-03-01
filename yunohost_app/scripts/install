@@ -46,7 +46,7 @@ npm install --prefix "$install_dir" --omit=dev express cors helmet
 ynh_script_progression --message="Installing Python dependencies..."
 python3 -m venv "$install_dir/ai/venv"
 "$install_dir/ai/venv/bin/pip" install --upgrade pip
-"$install_dir/ai/venv/bin/pip" install flask flask-cors
+"$install_dir/ai/venv/bin/pip" install -r "$install_dir/ai/requirements.txt"
 
 ynh_script_progression --message="Creating data files..."
 mkdir -p "$install_dir/data"

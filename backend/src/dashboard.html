@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pandora Dashboard</title>
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --accent: #0f766e;
+      --accent-2: #0ea5e9;
+      --danger: #dc2626;
+      --ok: #16a34a;
+      --border: #e5e7eb;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      color: var(--text);
+      background: linear-gradient(160deg, #eef7f6, #eef5ff 40%, #f8f9fb);
+      min-height: 100vh;
+    }
+    .wrap {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    h1 {
+      margin: 8px 0 20px;
+      font-size: 28px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+    }
+    .card h2 {
+      margin: 0 0 12px;
+      font-size: 18px;
+    }
+    .row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    input, button, textarea {
+      font: inherit;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      padding: 10px 12px;
+    }
+    input, textarea { width: 100%; }
+    button {
+      cursor: pointer;
+      background: var(--accent);
+      border: none;
+      color: #fff;
+      min-width: 120px;
+    }
+    button.secondary { background: var(--accent-2); }
+    button.danger { background: var(--danger); }
+    .status {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 8px;
+    }
+    .ok { color: var(--ok); }
+    pre {
+      margin: 8px 0 0;
+      padding: 10px;
+      background: #0b1220;
+      color: #d1e3ff;
+      border-radius: 8px;
+      overflow: auto;
+      max-height: 250px;
+      font-size: 12px;
+    }
+    @media (max-width: 900px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Pandora IoT Dashboard</h1>
+    <div class="grid">
+      <section class="card">
+        <h2>Sensor Data (API)</h2>
+        <div class="row">
+          <input id="tds" type="number" placeholder="TDS" value="450" />
+          <input id="temperature" type="number" placeholder="Temperature" value="25" />
+          <input id="moisture" type="number" placeholder="Moisture" value="350" />
+        </div>
+        <div class="row">
+          <button id="sendData">Send Data</button>
+          <button id="loadLatest" class="secondary">Load Latest</button>
+        </div>
+        <div id="apiStatus" class="status"></div>
+        <pre id="latestBox">No data loaded.</pre>
+      </section>
+
+      <section class="card">
+        <h2>AI (Predict / Train LSTM)</h2>
+        <div class="row">
+          <button id="aiHealth" class="secondary">AI Health</button>
+          <button id="predictBtn">Predict</button>
+        </div>
+        <div class="row">
+          <input id="epochs" type="number" placeholder="Epochs" value="10" />
+          <input id="batchSize" type="number" placeholder="Batch Size" value="16" />
+          <button id="trainBtn" class="danger">Train LSTM</button>
+        </div>
+        <div id="aiStatus" class="status"></div>
+        <pre id="aiBox">No AI response yet.</pre>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    const pathParts = window.location.pathname.split("/").filter(Boolean);
+    const dashboardIndex = pathParts.lastIndexOf("dashboard");
+    const basePath = dashboardIndex > -1 ? "/" + pathParts.slice(0, dashboardIndex).join("/") : "";
+
+    const apiBase = (basePath || "") + "/api";
+    const aiBase = (basePath || "") + "/ai";
+
+    const $ = (id) => document.getElementById(id);
+    const setJSON = (id, data) => { $(id).textContent = JSON.stringify(data, null, 2); };
+    const setStatus = (id, msg, ok = true) => {
+      const el = $(id);
+      el.textContent = msg;
+      el.className = "status " + (ok ? "ok" : "");
+    };
+
+    async function api(method, url, body) {
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: body ? JSON.stringify(body) : undefined,
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || data.message || ("HTTP " + res.status));
+      return data;
+    }
+
+    function readSensorForm() {
+      return {
+        tds: Number($("tds").value),
+        temperature: Number($("temperature").value),
+        moisture: Number($("moisture").value),
+      };
+    }
+
+    $("sendData").onclick = async () => {
+      try {
+        const payload = readSensorForm();
+        const data = await api("POST", apiBase + "/data", payload);
+        setJSON("latestBox", data);
+        setStatus("apiStatus", "Measurement sent.");
+      } catch (err) {
+        setStatus("apiStatus", "Send failed: " + err.message, false);
+      }
+    };
+
+    $("loadLatest").onclick = async () => {
+      try {
+        const data = await api("GET", apiBase + "/data/latest");
+        setJSON("latestBox", data);
+        setStatus("apiStatus", "Latest data loaded.");
+      } catch (err) {
+        setStatus("apiStatus", "Load failed: " + err.message, false);
+      }
+    };
+
+    $("aiHealth").onclick = async () => {
+      try {
+        const data = await api("GET", aiBase + "/health");
+        setJSON("aiBox", data);
+        setStatus("aiStatus", "AI health loaded.");
+      } catch (err) {
+        setStatus("aiStatus", "Health failed: " + err.message, false);
+      }
+    };
+
+    $("predictBtn").onclick = async () => {
+      try {
+        const payload = readSensorForm();
+        const data = await api("POST", aiBase + "/predict", payload);
+        setJSON("aiBox", data);
+        setStatus("aiStatus", "Prediction created.");
+      } catch (err) {
+        setStatus("aiStatus", "Predict failed: " + err.message, false);
+      }
+    };
+
+    $("trainBtn").onclick = async () => {
+      try {
+        const payload = {
+          epochs: Number($("epochs").value || 10),
+          batch_size: Number($("batchSize").value || 16),
+        };
+        setStatus("aiStatus", "Training started, this may take some time...", true);
+        const data = await api("POST", aiBase + "/train", payload);
+        setJSON("aiBox", data);
+        setStatus("aiStatus", "Training completed.");
+      } catch (err) {
+        setStatus("aiStatus", "Train failed: " + err.message, false);
+      }
+    };
+  </script>
+</body>
+</html>
