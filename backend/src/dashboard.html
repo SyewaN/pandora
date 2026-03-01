@@ -129,7 +129,7 @@
   <script>
     const p = window.location.pathname;
     const basePath = p.endsWith("/dashboard") ? p.slice(0, -"/dashboard".length) : p;
-    const apiBase = `${basePath}/api`.replace(/\/{2,}/g, "/");
+    let apiBase = `${basePath}/api`.replace(/\/{2,}/g, "/");
 
     const $ = (id) => document.getElementById(id);
     const output = (id, payload) => { $(id).textContent = JSON.stringify(payload, null, 2); };
@@ -151,6 +151,25 @@
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || data.message || `HTTP ${res.status}`);
       return data;
+    }
+
+    async function detectApiBase() {
+      const guess1 = `${basePath}/api`.replace(/\/{2,}/g, "/");
+      const guess2 = "/pandora/api";
+      const guess3 = "/api";
+      const candidates = [...new Set([guess1, guess2, guess3])];
+
+      for (const candidate of candidates) {
+        try {
+          const res = await fetch(`${candidate}/health`, { method: "GET" });
+          if (res.ok) {
+            apiBase = candidate;
+            mark("apiStatus", `API base: ${apiBase}`);
+            return;
+          }
+        } catch (_e) {}
+      }
+      mark("apiStatus", "API base could not be auto-detected.", false);
     }
 
     function readSensor() {
@@ -265,9 +284,12 @@
       } catch (e) { mark("aiStatus", e.message, false); }
     };
 
-    refreshTable().catch(() => {});
-    pollTrainStatus().catch(() => {});
-    setInterval(() => { pollTrainStatus().catch(() => {}); }, 7000);
+    (async () => {
+      await detectApiBase();
+      refreshTable().catch(() => {});
+      pollTrainStatus().catch(() => {});
+      setInterval(() => { pollTrainStatus().catch(() => {}); }, 7000);
+    })();
   </script>
 </body>
 </html>
