@@ -6,89 +6,70 @@
   <title>Pandora Dashboard</title>
   <style>
     :root {
-      --bg: #f4f7fb;
-      --card: #ffffff;
-      --text: #1f2937;
+      --ink: #111827;
       --muted: #6b7280;
-      --accent: #0f766e;
-      --accent-2: #0ea5e9;
-      --danger: #dc2626;
-      --ok: #16a34a;
-      --border: #e5e7eb;
+      --bg: #f3f7fb;
+      --card: #ffffff;
+      --line: #dbe3ee;
+      --ok: #15803d;
+      --bad: #b91c1c;
+      --teal: #0f766e;
+      --blue: #0369a1;
+      --orange: #c2410c;
     }
     * { box-sizing: border-box; }
     body {
       margin: 0;
-      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
-      color: var(--text);
-      background: linear-gradient(160deg, #eef7f6, #eef5ff 40%, #f8f9fb);
+      background: radial-gradient(circle at 20% 10%, #e6fff7, #eef5ff 45%, #f8fafc);
+      color: var(--ink);
+      font-family: "Segoe UI", system-ui, sans-serif;
       min-height: 100vh;
     }
-    .wrap {
-      max-width: 1100px;
-      margin: 0 auto;
-      padding: 20px;
-    }
-    h1 {
-      margin: 8px 0 20px;
-      font-size: 28px;
-    }
-    .grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-    }
+    .wrap { max-width: 1200px; margin: 0 auto; padding: 18px; }
+    h1 { margin: 8px 0 16px; }
+    .grid { display: grid; grid-template-columns: 1.1fr 1fr; gap: 14px; }
     .card {
       background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 16px;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      box-shadow: 0 8px 24px rgba(16, 24, 40, 0.06);
+      padding: 14px;
     }
-    .card h2 {
-      margin: 0 0 12px;
-      font-size: 18px;
-    }
-    .row {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 10px;
-    }
-    input, button, textarea {
+    .card h2 { margin: 0 0 10px; font-size: 18px; }
+    .row { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
+    input, button, select {
       font: inherit;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-      padding: 10px 12px;
+      border-radius: 9px;
+      padding: 9px 11px;
+      border: 1px solid var(--line);
     }
-    input, textarea { width: 100%; }
+    input, select { width: 100%; }
     button {
       cursor: pointer;
-      background: var(--accent);
-      border: none;
       color: #fff;
-      min-width: 120px;
+      border: none;
+      min-width: 100px;
+      background: var(--teal);
     }
-    button.secondary { background: var(--accent-2); }
-    button.danger { background: var(--danger); }
-    .status {
-      font-size: 13px;
-      color: var(--muted);
-      margin-top: 8px;
-    }
+    button.blue { background: var(--blue); }
+    button.orange { background: var(--orange); }
+    .status { color: var(--muted); font-size: 13px; margin: 8px 0; min-height: 18px; }
     .ok { color: var(--ok); }
+    .bad { color: var(--bad); }
     pre {
-      margin: 8px 0 0;
-      padding: 10px;
+      margin: 0;
       background: #0b1220;
-      color: #d1e3ff;
-      border-radius: 8px;
+      color: #d9e8ff;
+      border-radius: 10px;
+      padding: 10px;
+      max-height: 300px;
       overflow: auto;
-      max-height: 250px;
       font-size: 12px;
     }
-    @media (max-width: 900px) {
-      .grid { grid-template-columns: 1fr; }
-    }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { border-bottom: 1px solid var(--line); padding: 6px; text-align: left; }
+    th { color: var(--muted); font-weight: 600; }
+    @media (max-width: 960px) { .grid { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
@@ -96,65 +77,83 @@
     <h1>Pandora IoT Dashboard</h1>
     <div class="grid">
       <section class="card">
-        <h2>Sensor Data (API)</h2>
+        <h2>Sensor/API</h2>
         <div class="row">
-          <input id="tds" type="number" placeholder="TDS" value="450" />
-          <input id="temperature" type="number" placeholder="Temperature" value="25" />
-          <input id="moisture" type="number" placeholder="Moisture" value="350" />
+          <input id="tds" type="number" value="450" placeholder="TDS" />
+          <input id="temperature" type="number" value="25" placeholder="Temperature" />
+          <input id="moisture" type="number" value="350" placeholder="Moisture" />
         </div>
         <div class="row">
-          <button id="sendData">Send Data</button>
-          <button id="loadLatest" class="secondary">Load Latest</button>
+          <button id="btnSend">Send</button>
+          <button id="btnLatest" class="blue">Latest</button>
+          <input id="mockCount" type="number" value="20" min="1" max="200" />
+          <button id="btnMock" class="orange">Mock</button>
+        </div>
+        <div class="row">
+          <input id="uploadFile" type="file" accept=".json,.csv" />
+          <button id="btnUpload">Upload File</button>
+          <button id="btnList" class="blue">List</button>
         </div>
         <div id="apiStatus" class="status"></div>
-        <pre id="latestBox">No data loaded.</pre>
+        <pre id="apiOutput">No API response yet.</pre>
       </section>
 
       <section class="card">
-        <h2>AI (Predict / Train LSTM)</h2>
+        <h2>AI/LSTM</h2>
         <div class="row">
-          <button id="aiHealth" class="secondary">AI Health</button>
-          <button id="predictBtn">Predict</button>
+          <button id="btnAiHealth" class="blue">AI Health</button>
+          <button id="btnPredict">Predict</button>
         </div>
         <div class="row">
-          <input id="epochs" type="number" placeholder="Epochs" value="10" />
-          <input id="batchSize" type="number" placeholder="Batch Size" value="16" />
-          <button id="trainBtn" class="danger">Train LSTM</button>
+          <input id="epochs" type="number" value="10" min="1" max="500" />
+          <input id="batchSize" type="number" value="16" min="1" max="256" />
+          <button id="btnTrain" class="orange">Start Train</button>
+          <button id="btnTrainStatus" class="blue">Train Status</button>
         </div>
         <div id="aiStatus" class="status"></div>
-        <pre id="aiBox">No AI response yet.</pre>
+        <pre id="aiOutput">No AI response yet.</pre>
       </section>
     </div>
+
+    <section class="card" style="margin-top:14px;">
+      <h2>Recent Measurements</h2>
+      <table>
+        <thead>
+          <tr><th>Timestamp</th><th>TDS</th><th>Temperature</th><th>Moisture</th></tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </section>
   </div>
 
   <script>
-    const pathParts = window.location.pathname.split("/").filter(Boolean);
-    const dashboardIndex = pathParts.lastIndexOf("dashboard");
-    const basePath = dashboardIndex > -1 ? "/" + pathParts.slice(0, dashboardIndex).join("/") : "";
-
-    const apiBase = (basePath || "") + "/api";
-    const aiBase = (basePath || "") + "/ai";
+    const p = window.location.pathname;
+    const basePath = p.endsWith("/dashboard") ? p.slice(0, -"/dashboard".length) : p;
+    const apiBase = `${basePath}/api`.replace(/\/{2,}/g, "/");
 
     const $ = (id) => document.getElementById(id);
-    const setJSON = (id, data) => { $(id).textContent = JSON.stringify(data, null, 2); };
-    const setStatus = (id, msg, ok = true) => {
+    const output = (id, payload) => { $(id).textContent = JSON.stringify(payload, null, 2); };
+    const mark = (id, msg, ok = true) => {
       const el = $(id);
       el.textContent = msg;
-      el.className = "status " + (ok ? "ok" : "");
+      el.className = `status ${ok ? "ok" : "bad"}`;
     };
 
-    async function api(method, url, body) {
-      const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: body ? JSON.stringify(body) : undefined,
-      });
+    async function request(method, url, body, formData) {
+      const opts = { method, headers: {} };
+      if (formData) {
+        opts.body = formData;
+      } else if (body !== undefined) {
+        opts.headers["Content-Type"] = "application/json";
+        opts.body = JSON.stringify(body);
+      }
+      const res = await fetch(url, opts);
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || data.message || ("HTTP " + res.status));
+      if (!res.ok) throw new Error(data.error || data.message || `HTTP ${res.status}`);
       return data;
     }
 
-    function readSensorForm() {
+    function readSensor() {
       return {
         tds: Number($("tds").value),
         temperature: Number($("temperature").value),
@@ -162,62 +161,113 @@
       };
     }
 
-    $("sendData").onclick = async () => {
-      try {
-        const payload = readSensorForm();
-        const data = await api("POST", apiBase + "/data", payload);
-        setJSON("latestBox", data);
-        setStatus("apiStatus", "Measurement sent.");
-      } catch (err) {
-        setStatus("apiStatus", "Send failed: " + err.message, false);
+    async function refreshTable() {
+      const result = await request("GET", `${apiBase}/data?limit=20`);
+      const tbody = $("rows");
+      tbody.innerHTML = "";
+      (result.data || []).forEach((row) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${row.timestamp || ""}</td><td>${row.tds}</td><td>${row.temperature}</td><td>${row.moisture}</td>`;
+        tbody.appendChild(tr);
+      });
+      return result;
+    }
+
+    async function pollTrainStatus() {
+      const result = await request("GET", `${apiBase}/ai/train/status`);
+      output("aiOutput", result);
+      if (result.success && result.data && result.data.running) {
+        mark("aiStatus", "Training in progress...");
+      } else {
+        mark("aiStatus", "Training status fetched.");
       }
+    }
+
+    $("btnSend").onclick = async () => {
+      try {
+        const data = await request("POST", `${apiBase}/data`, readSensor());
+        output("apiOutput", data);
+        await refreshTable();
+        mark("apiStatus", "Measurement saved.");
+      } catch (e) { mark("apiStatus", e.message, false); }
     };
 
-    $("loadLatest").onclick = async () => {
+    $("btnLatest").onclick = async () => {
       try {
-        const data = await api("GET", apiBase + "/data/latest");
-        setJSON("latestBox", data);
-        setStatus("apiStatus", "Latest data loaded.");
-      } catch (err) {
-        setStatus("apiStatus", "Load failed: " + err.message, false);
-      }
+        const data = await request("GET", `${apiBase}/data/latest`);
+        output("apiOutput", data);
+        mark("apiStatus", "Latest measurement loaded.");
+      } catch (e) { mark("apiStatus", e.message, false); }
     };
 
-    $("aiHealth").onclick = async () => {
+    $("btnMock").onclick = async () => {
       try {
-        const data = await api("GET", aiBase + "/health");
-        setJSON("aiBox", data);
-        setStatus("aiStatus", "AI health loaded.");
-      } catch (err) {
-        setStatus("aiStatus", "Health failed: " + err.message, false);
-      }
+        const count = Number($("mockCount").value || 20);
+        const data = await request("POST", `${apiBase}/data/mock`, { count });
+        output("apiOutput", data);
+        await refreshTable();
+        mark("apiStatus", `Mock data generated (${count}).`);
+      } catch (e) { mark("apiStatus", e.message, false); }
     };
 
-    $("predictBtn").onclick = async () => {
+    $("btnUpload").onclick = async () => {
       try {
-        const payload = readSensorForm();
-        const data = await api("POST", aiBase + "/predict", payload);
-        setJSON("aiBox", data);
-        setStatus("aiStatus", "Prediction created.");
-      } catch (err) {
-        setStatus("aiStatus", "Predict failed: " + err.message, false);
-      }
+        const file = $("uploadFile").files[0];
+        if (!file) throw new Error("Select a JSON/CSV file first.");
+        const form = new FormData();
+        form.append("file", file);
+        const data = await request("POST", `${apiBase}/data/upload`, undefined, form);
+        output("apiOutput", data);
+        await refreshTable();
+        mark("apiStatus", "File uploaded and processed.");
+      } catch (e) { mark("apiStatus", e.message, false); }
     };
 
-    $("trainBtn").onclick = async () => {
+    $("btnList").onclick = async () => {
+      try {
+        const data = await refreshTable();
+        output("apiOutput", data);
+        mark("apiStatus", "Measurements listed.");
+      } catch (e) { mark("apiStatus", e.message, false); }
+    };
+
+    $("btnAiHealth").onclick = async () => {
+      try {
+        const data = await request("GET", `${apiBase}/ai/health`);
+        output("aiOutput", data);
+        mark("aiStatus", "AI health loaded.");
+      } catch (e) { mark("aiStatus", e.message, false); }
+    };
+
+    $("btnPredict").onclick = async () => {
+      try {
+        const data = await request("POST", `${apiBase}/ai/predict`, readSensor());
+        output("aiOutput", data);
+        mark("aiStatus", "Prediction generated.");
+      } catch (e) { mark("aiStatus", e.message, false); }
+    };
+
+    $("btnTrain").onclick = async () => {
       try {
         const payload = {
           epochs: Number($("epochs").value || 10),
           batch_size: Number($("batchSize").value || 16),
         };
-        setStatus("aiStatus", "Training started, this may take some time...", true);
-        const data = await api("POST", aiBase + "/train", payload);
-        setJSON("aiBox", data);
-        setStatus("aiStatus", "Training completed.");
-      } catch (err) {
-        setStatus("aiStatus", "Train failed: " + err.message, false);
-      }
+        const data = await request("POST", `${apiBase}/ai/train/start`, payload);
+        output("aiOutput", data);
+        mark("aiStatus", "Training started.");
+      } catch (e) { mark("aiStatus", e.message, false); }
     };
+
+    $("btnTrainStatus").onclick = async () => {
+      try {
+        await pollTrainStatus();
+      } catch (e) { mark("aiStatus", e.message, false); }
+    };
+
+    refreshTable().catch(() => {});
+    pollTrainStatus().catch(() => {});
+    setInterval(() => { pollTrainStatus().catch(() => {}); }, 7000);
   </script>
 </body>
 </html>

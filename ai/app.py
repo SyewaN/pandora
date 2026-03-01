@@ -5,6 +5,7 @@ import os
 import random
 import threading
 from pathlib import Path
+from datetime import datetime
 from typing import Any, Dict, List
 
 import numpy as np
@@ -18,6 +19,13 @@ MODEL_IMPORT_ERROR = None
 forecaster = None
 model_config = None
 training_lock = threading.Lock()
+training_state: Dict[str, Any] = {
+    "running": False,
+    "started_at": None,
+    "finished_at": None,
+    "last_error": None,
+    "last_result": None,
+}
 
 try:
     from model import LSTMForecaster, ModelConfig
@@ -165,6 +173,33 @@ def predict():
 
 @app.route("/train", methods=["POST"])
 def train():
+    # Backward-compatible alias to async training start.
+    return train_start()
+
+
+def _train_worker(epochs: int, batch_size: int) -> None:
+    try:
+        minimum_required = model_config.sequence_length + model_config.forecast_steps + 20
+        matrix = _load_training_matrix(minimum_required)
+        metrics = forecaster.train(matrix, epochs=epochs, batch_size=batch_size)
+        forecaster.load()
+        training_state["last_result"] = {
+            "metrics": metrics,
+            "rows_used": int(len(matrix)),
+            "mode": "demo" if forecaster.is_demo_mode else "model",
+        }
+        training_state["last_error"] = None
+    except Exception as exc:  # pylint: disable=broad-except
+        training_state["last_error"] = str(exc)
+        training_state["last_result"] = None
+    finally:
+        training_state["running"] = False
+        training_state["finished_at"] = datetime.utcnow().isoformat() + "Z"
+        training_lock.release()
+
+
+@app.route("/train/start", methods=["POST"])
+def train_start():
     if forecaster is None or model_config is None:
         return jsonify(
             {
@@ -177,31 +212,31 @@ def train():
     if not training_lock.acquire(blocking=False):
         return jsonify({"success": False, "error": "Training already in progress."}), 409
 
-    try:
-        payload = request.get_json(silent=True) or {}
-        epochs = int(payload.get("epochs", 10))
-        batch_size = int(payload.get("batch_size", 16))
+    payload = request.get_json(silent=True) or {}
+    epochs = int(payload.get("epochs", 10))
+    batch_size = int(payload.get("batch_size", 16))
 
-        minimum_required = model_config.sequence_length + model_config.forecast_steps + 20
-        matrix = _load_training_matrix(minimum_required)
-        metrics = forecaster.train(matrix, epochs=epochs, batch_size=batch_size)
-        forecaster.load()
+    training_state["running"] = True
+    training_state["started_at"] = datetime.utcnow().isoformat() + "Z"
+    training_state["finished_at"] = None
+    training_state["last_error"] = None
+    training_state["last_result"] = None
 
-        return jsonify(
-            {
-                "success": True,
-                "message": "LSTM training completed.",
-                "data": {
-                    "metrics": metrics,
-                    "rows_used": int(len(matrix)),
-                    "mode": "demo" if forecaster.is_demo_mode else "model",
-                },
-            }
-        )
-    except Exception as exc:  # pylint: disable=broad-except
-        return jsonify({"success": False, "error": str(exc)}), 500
-    finally:
-        training_lock.release()
+    thread = threading.Thread(target=_train_worker, args=(epochs, batch_size), daemon=True)
+    thread.start()
+
+    return jsonify(
+        {
+            "success": True,
+            "message": "Training started in background.",
+            "data": {"running": True, "epochs": epochs, "batch_size": batch_size},
+        }
+    )
+
+
+@app.route("/train/status", methods=["GET"])
+def train_status():
+    return jsonify({"success": True, "data": training_state})
 
 
 if __name__ == "__main__":

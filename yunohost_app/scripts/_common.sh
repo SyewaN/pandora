@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # shellcheck disable=SC2034
-pkg_dependencies="git nodejs npm python3 python3-venv"
+pkg_dependencies="git nodejs npm python3 python3-venv build-essential"
 
 _pandora_set_paths() {
   app="$YNH_APP_INSTANCE_NAME"
@@ -21,9 +21,13 @@ _pandora_write_env() {
   cat >"$env_file" <<EOF
 NODE_ENV=production
 PORT=$backend_port
+DATA_FILE_PATH=$install_dir/data/measurements.json
+DATA_DB_PATH=$install_dir/data/measurements.db
+AI_SERVICE_URL=http://127.0.0.1:$ai_port
 AI_PORT=$ai_port
 AI_HOST=127.0.0.1
 FLASK_ENV=production
+AI_DATA_PATH=$install_dir/data/measurements.json
 EOF
 }
 

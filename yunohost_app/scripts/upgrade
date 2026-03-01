@@ -28,7 +28,6 @@ fi
 
 ynh_script_progression --message="Updating dependencies..."
 npm install --prefix "$install_dir" --omit=dev
-npm install --prefix "$install_dir" --omit=dev express cors helmet
 python3 -m venv "$install_dir/ai/venv"
 "$install_dir/ai/venv/bin/pip" install --upgrade pip
 "$install_dir/ai/venv/bin/pip" install -r "$install_dir/ai/requirements.txt"

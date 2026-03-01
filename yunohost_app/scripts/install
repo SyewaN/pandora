@@ -41,7 +41,6 @@ git clone --depth 1 --branch "$repo_branch" "$repo_url" "$install_dir"
 
 ynh_script_progression --message="Installing Node dependencies..."
 npm install --prefix "$install_dir" --omit=dev
-npm install --prefix "$install_dir" --omit=dev express cors helmet
 
 ynh_script_progression --message="Installing Python dependencies..."
 python3 -m venv "$install_dir/ai/venv"
